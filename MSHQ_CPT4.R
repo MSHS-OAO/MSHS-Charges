@@ -39,9 +39,9 @@ charges <- function(MSH,MSQ){
                  END = paste0(substr(START,6,7),"/",days_in_month(MONTH),"/",Year),
                  START = paste0(substr(START,6,7),"/",substr(START,9,10),"/",Year),
                  REP.DEFINITION = paste0(REP.ID," - ",REP.NAME)) %>%
-    group_by(PARTNER,HOSP,ORACLE.CC,CPT,START,END,CPT,BUDGET,CPT.GROUP,REP.DEFINITION,QUARTER) %>%
+    group_by(PARTNER,HOSP,ORACLE.CC,START,END,CPT,BUDGET,CPT.GROUP,REP.DEFINITION,QUARTER) %>%
     summarise(QTY = sum(QTY, na.rm=T)) %>%
-    select(PARTNER,HOSP,ORACLE.CC,CPT,START,END,QTY,BUDGET,CPT.GROUP,REP.DEFINITION,QUARTER)
+    select(PARTNER,HOSP,ORACLE.CC,START,END,CPT,QTY,BUDGET,CPT.GROUP,REP.DEFINITION,QUARTER)
   MSHQ <<- MSHQ
 }
 #Creates master repository and master trend
@@ -80,7 +80,7 @@ upload_master <- function(){
   eyear <- substr(end, start=1, stop=4)
   name <- paste0("MSHQ_CPT4_",sday,smonth,syear," to ",eday,emonth,eyear,".csv")
   upload_path <- paste0("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Volume - Data\\MSH Data\\Charges\\Uploads\\",name)
-  write.csv(upload,upload_path)
+  write.csv(upload,upload_path,row.names = F,col.names = F)
 }
 
 #Bring in all sheets in charges file
