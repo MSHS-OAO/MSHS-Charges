@@ -9,6 +9,7 @@ library(xlsx)
 rev_map <- read_excel("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Volume - Data\\MSH Data\\Charges\\MSHQ REV CROSSWALK.xlsx") %>%
   select(c(1,5:8)) %>%
   distinct()
+#For months: January,April,July,October there is a new cpt_ref to download
 cpt_ref <- read_excel("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Volume - Data\\MSH Data\\Charges\\CPT Reference\\CPT_Ref.xlsx") %>%
   select(1,2,3,5,11,12)
 
@@ -47,7 +48,11 @@ charges <- function(MSH,MSQ){
 #Creates master repository and master trend
 master <- function(){
   master <- readRDS("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Volume - Data\\MSH Data\\Charges\\Master\\master.RDS")
-  master <- rbind(master,MSHQ)
+  if(max(as.Date(master$END,format = "%m/%d/%Y")) < max(as.Date(MSHQ$END,format = "%m/%d/%Y"))){
+    master <- rbind(master,MSHQ)
+  } else {
+    stop("Raw data overlaps with master")
+  }
   master_trend <- master %>%
     mutate(`Concatenate for lookup` = paste0(Year,"Q",QUARTER,CPT)) %>%
     left_join(.,cpt_ref) %>%
@@ -80,7 +85,7 @@ upload_master <- function(){
   eyear <- substr(end, start=1, stop=4)
   name <- paste0("MSHQ_CPT4_",sday,smonth,syear," to ",eday,emonth,eyear,".csv")
   upload_path <- paste0("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Volume - Data\\MSH Data\\Charges\\Uploads\\",name)
-  write.csv(upload,upload_path,row.names = F,col.names = F)
+  write.table(upload,upload_path,row.names = F,col.names = F)
 }
 
 #Bring in all sheets in charges file
@@ -93,7 +98,7 @@ names(mylist)
 #Enter Year of data
 Year <- "2020"
 #Execute functions
-charges(MSH = mylist[[1]],MSQ = mylist[[2]])
+charges(MSH = mylist[[4]],MSQ = mylist[[1]])
 #Create master and master trend
 master()
 #Review master trend
