@@ -85,7 +85,7 @@ upload_master <- function(){
   eyear <- substr(end, start=1, stop=4)
   name <- paste0("MSHQ_CPT4_",sday,smonth,syear," to ",eday,emonth,eyear,".csv")
   upload_path <- paste0("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Volume - Data\\MSH Data\\Charges\\Uploads\\",name)
-  write.table(upload,upload_path,row.names = F,col.names = F)
+  write.table(upload,upload_path,sep = ",",row.names = F,col.names = F)
 }
 
 #Bring in all sheets in charges file
