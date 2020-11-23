@@ -35,9 +35,10 @@ charges <- function(MSH,MSQ){
            BUDGET = "0",
            HOSP = "NY0014",
            START = as.Date(paste0(MONTH,"/1/",Year),format = "%m/%d/%Y"),
-           QUARTER = Q)
+           QUARTER = Q,
+           QTY = as.numeric(QTY))
   MSHQ <- mutate(MSHQ,
-                 END = paste0(substr(START,6,7),"/",days_in_month(MONTH),"/",Year),
+                 END = paste0(substr(START,6,7),"/",days_in_month(START),"/",Year),
                  START = paste0(substr(START,6,7),"/",substr(START,9,10),"/",Year),
                  REP.DEFINITION = paste0(REP.ID," - ",REP.NAME)) %>%
     group_by(PARTNER,HOSP,ORACLE.CC,START,END,CPT,BUDGET,CPT.GROUP,REP.DEFINITION,QUARTER) %>%
@@ -74,6 +75,7 @@ upload_master <- function(){
   write.xlsx(as.data.frame(master_trend),"J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Volume - Data\\MSH Data\\Charges\\Master\\master_trend.xlsx",
              row.names = F)
   upload <- MSHQ %>% ungroup() %>% select(c(1:8))
+  upload <<- upload
   start <- as.Date(min(MSHQ$START),format = "%m/%d/%Y")
   end <- as.Date(max(MSHQ$END),format = "%m/%d/%Y")
   smonth <- month(start)
@@ -98,7 +100,7 @@ names(mylist)
 #Enter Year of data
 Year <- "2020"
 #Execute functions
-charges(MSH = mylist[[4]],MSQ = mylist[[1]])
+charges(MSH = mylist[[1]],MSQ = mylist[[2]])
 #Create master and master trend
 master()
 #Review master trend
