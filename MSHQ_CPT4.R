@@ -100,7 +100,7 @@ names(mylist)
 #Enter Year of data
 Year <- "2020"
 #Execute functions
-charges(MSH = mylist[[1]],MSQ = mylist[[2]])
+charges(MSH = mylist[[2]],MSQ = mylist[[1]])
 #Create master and master trend
 master()
 #Review master trend
