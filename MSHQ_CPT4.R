@@ -9,17 +9,22 @@ library(xlsx)
 rev_map <- read_excel("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Volume - Data\\MSH Data\\Charges\\MSHQ REV CROSSWALK.xlsx") %>%
   select(c(1,5:8)) %>%
   distinct()
+#Bring in CPT reference table
 #For months: January,April,July,October there is a new cpt_ref to download
 cpt_ref <- read_excel("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Volume - Data\\MSH Data\\Charges\\CPT Reference\\CPT_Ref.xlsx") %>%
   select(1,2,3,5,11,12)
 
 #Prepares file for master
 charges <- function(MSH,MSQ){
+  #colnames for the charge details
   chargenames <- c("SINAI.CODE","REV.DEP","DESCRIPTION","CPT","QTY","MONTH")
   colnames(MSH) <- chargenames
   colnames(MSQ) <- chargenames
+  #combine MSH and MSQ charge details
   MSHQ <- rbind(MSH,MSQ)
+  #remove blank CPT lines
   MSHQ <- filter(MSHQ,!is.na(CPT))
+  #establish what quarter of the year it is
   if(max(MSHQ$MONTH) < 4){
     Q <<- 1
   } else if(max(MSHQ$MONTH) < 7){
@@ -29,14 +34,18 @@ charges <- function(MSH,MSQ){
   } else {
     Q <<- 4
   }
+  #bring in revenue center mapping
   MSHQ <- left_join(MSHQ,rev_map) %>% 
+    #remove non-premier revenue centers
     filter(!is.na(ORACLE.CC)) %>%
+    #begin formatting for upload
     mutate(PARTNER = "729805",
            BUDGET = "0",
            HOSP = "NY0014",
            START = as.Date(paste0(MONTH,"/1/",Year),format = "%m/%d/%Y"),
            QUARTER = Q,
            QTY = as.numeric(QTY))
+  #Add start and end date and finish formatting
   MSHQ <- mutate(MSHQ,
                  END = paste0(substr(START,6,7),"/",days_in_month(START),"/",Year),
                  START = paste0(substr(START,6,7),"/",substr(START,9,10),"/",Year),
@@ -44,16 +53,19 @@ charges <- function(MSH,MSQ){
     group_by(PARTNER,HOSP,ORACLE.CC,START,END,CPT,BUDGET,CPT.GROUP,REP.DEFINITION,QUARTER) %>%
     summarise(QTY = sum(QTY, na.rm=T)) %>%
     select(PARTNER,HOSP,ORACLE.CC,START,END,CPT,QTY,BUDGET,CPT.GROUP,REP.DEFINITION,QUARTER)
-  MSHQ <<- MSHQ
+  return(MSHQ)
 }
 #Creates master repository and master trend
 master <- function(){
+  #read in master cpt file
   master <- readRDS("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Volume - Data\\MSH Data\\Charges\\Master\\master.RDS")
-  if(max(as.Date(master$END,format = "%m/%d/%Y")) < max(as.Date(MSHQ$END,format = "%m/%d/%Y"))){
-    master <- rbind(master,MSHQ)
+  #Check that new charge detail does not overlap with master
+  if(max(as.Date(master$END,format = "%m/%d/%Y")) < min(as.Date(MSHQ$START,format = "%m/%d/%Y"))){
+    master <- rbind.data.frame(master,MSHQ)
   } else {
     stop("Raw data overlaps with master")
   }
+  #trend out the master file by month to validate data
   master_trend <- master %>%
     mutate(`Concatenate for lookup` = paste0(Year,"Q",QUARTER,CPT)) %>%
     left_join(.,cpt_ref) %>%
@@ -66,6 +78,7 @@ master <- function(){
     group_by(REP.DEFINITION,CPT.GROUP,END)%>%
     summarise(LABOR = sum(LABOR,na.rm = T)) %>%
     pivot_wider(id_cols = c(REP.DEFINITION,CPT.GROUP),names_from = END,values_from = LABOR)
+  #save master and trend to global environment
   master <<- master
   master_trend <<- master_trend
 }
@@ -100,7 +113,7 @@ names(mylist)
 #Enter Year of data
 Year <- "2020"
 #Execute functions
-charges(MSH = mylist[[2]],MSQ = mylist[[1]])
+MSHQ <- charges(MSH = mylist[[2]],MSQ = mylist[[1]])
 #Create master and master trend
 master()
 #Review master trend
