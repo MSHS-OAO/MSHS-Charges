@@ -67,16 +67,18 @@ master <- function(){
   }
   #trend out the master file by month to validate data
   master_trend <- master %>%
-    mutate(`Concatenate for lookup` = paste0(Year,"Q",QUARTER,CPT)) %>%
+    mutate(`Concatenate for lookup` = paste0(substr(END,7,10),"Q",QUARTER,CPT)) %>%
     left_join(.,cpt_ref) %>%
     mutate(LABOR = case_when(
       CPT.GROUP == "PROCEDURE" ~ QTY*`CPT Procedure Count`,
       CPT.GROUP == "LAB" ~ QTY*`Lab Procedure Count`,
       CPT.GROUP == "RVU" ~ QTY*`Facility Total RVU Factor`),
-      LABOR = as.numeric(LABOR)) %>%
+      LABOR = as.numeric(LABOR),
+      DATE = as.Date(END, format = "%m/%d/%Y")) %>%
     filter(LABOR > 0) %>%
-    group_by(REP.DEFINITION,CPT.GROUP,END)%>%
+    group_by(REP.DEFINITION,CPT.GROUP,END,DATE)%>%
     summarise(LABOR = sum(LABOR,na.rm = T)) %>%
+    arrange(DATE) %>%
     pivot_wider(id_cols = c(REP.DEFINITION,CPT.GROUP),names_from = END,values_from = LABOR)
   #save master and trend to global environment
   master <<- master
@@ -111,9 +113,9 @@ names(mylist) <- sheetnames
 names(mylist)
 
 #Enter Year of data
-Year <- "2020"
+Year <- "2021"
 #Execute functions
-MSHQ <- charges(MSH = mylist[[2]],MSQ = mylist[[1]])
+MSHQ <- charges(MSH = mylist[[3]],MSQ = mylist[[4]])
 #Create master and master trend
 master()
 #Review master trend
