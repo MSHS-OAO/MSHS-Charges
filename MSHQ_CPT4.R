@@ -12,7 +12,7 @@ rev_map <- read_excel("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Produ
 #Bring in CPT reference table
 #For months: January,April,July,October there is a new cpt_ref to download
 cpt_ref <- read_excel("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Volume - Data\\MSH Data\\Charges\\CPT Reference\\CPT_Ref.xlsx") %>%
-  select(1,2,3,5,11,12)
+  select(1,2,3,6,11,12)
 
 #Prepares file for master
 charges <- function(MSH,MSQ){
@@ -20,6 +20,10 @@ charges <- function(MSH,MSQ){
   chargenames <- c("SINAI.CODE","REV.DEP","DESCRIPTION","CPT","QTY","MONTH")
   colnames(MSH) <- chargenames
   colnames(MSQ) <- chargenames
+  MSH <- MSH %>% 
+    filter(!is.na(SINAI.CODE))
+  MSQ <- MSQ %>% 
+    filter(!is.na(SINAI.CODE))
   #combine MSH and MSQ charge details
   MSHQ <- rbind(MSH,MSQ)
   #remove blank CPT lines
@@ -72,7 +76,7 @@ master <- function(){
     mutate(LABOR = case_when(
       CPT.GROUP == "PROCEDURE" ~ QTY*`CPT Procedure Count`,
       CPT.GROUP == "LAB" ~ QTY*`Lab Procedure Count`,
-      CPT.GROUP == "RVU" ~ QTY*`Facility Total RVU Factor`),
+      CPT.GROUP == "RVU" ~ QTY*`Facility Practice Expense RVU Factor`),
       LABOR = as.numeric(LABOR),
       DATE = as.Date(END, format = "%m/%d/%Y")) %>%
     filter(LABOR > 0) %>%
