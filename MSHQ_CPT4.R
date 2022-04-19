@@ -119,7 +119,7 @@ names(mylist)
 #Enter Year of data
 Year <- "2022"
 #Execute functions
-MSHQ <- charges(MSH = mylist[[3]],MSQ = mylist[[4]])
+MSHQ <- charges(MSH = mylist[[2]],MSQ = mylist[[1]])
 #Create master and master trend
 master()
 #Review master trend
